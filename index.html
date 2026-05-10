@@ -9,33 +9,67 @@
     
     <script>
         /**
-         * 自定义组件：鱼眼镜头控制
-         * 实现点击地面/场景进行平滑穿梭，并增加镜头畸变的视觉表现
+         * 自定义组件：鱼眼镜头控制 (带边界与交互优化)
          */
         AFRAME.registerComponent('fisheye-navigation', {
             init: function () {
-                this.el.addEventListener('click', (evt) => {
-                    const point = evt.detail.intersection.point;
-                    const rig = document.querySelector('#cameraRig');
-                    
-                    // 模拟鱼眼镜头穿梭时的拉伸感
-                    // 1. 平滑移动位置
-                    rig.setAttribute('animation__move', {
-                        property: 'position',
-                        to: {x: point.x, y: 1.6, z: point.z},
-                        dur: 1500,
-                        easing: 'easeInOutQuint'
-                    });
+                let startX, startY, startTime;
 
-                    // 2. 穿梭时的 FOV 动态变化（产生速度感畸变）
-                    const cam = document.querySelector('[camera]');
-                    cam.setAttribute('animation__fov', {
-                        property: 'fov',
-                        from: 140,
-                        to: 110,
-                        dur: 1000,
-                        easing: 'easeOutQuad'
-                    });
+                // 记录按下时的位置和时间
+                this.el.addEventListener('mousedown', (evt) => {
+                    startX = evt.clientX;
+                    startY = evt.clientY;
+                    startTime = Date.now();
+                });
+
+                this.el.addEventListener('mouseup', (evt) => {
+                    const diffX = Math.abs(evt.clientX - startX);
+                    const diffY = Math.abs(evt.clientY - startY);
+                    const duration = Date.now() - startTime;
+
+                    // 阈值判断：移动距离小于 5px 且按下时间小于 300ms 判定为“点击”而非“拖动”
+                    if (diffX < 5 && diffY < 5 && duration < 300) {
+                        this.handleTravel(evt);
+                    }
+                });
+            },
+
+            handleTravel: function (evt) {
+                if (!evt.detail.intersection) return;
+
+                const point = evt.detail.intersection.point;
+                const rig = document.querySelector('#cameraRig');
+                
+                // 1. 设置边界：限制移动范围防止穿模
+                // 天空球半径为 100，我们将移动范围限制在中心半径 70 以内
+                const maxRadius = 70;
+                const currentDistance = Math.sqrt(point.x ** 2 + point.z ** 2);
+                
+                let targetX = point.x;
+                let targetZ = point.z;
+
+                if (currentDistance > maxRadius) {
+                    const ratio = maxRadius / currentDistance;
+                    targetX *= ratio;
+                    targetZ *= ratio;
+                }
+
+                // 2. 执行穿梭动画
+                rig.setAttribute('animation__move', {
+                    property: 'position',
+                    to: {x: targetX, y: 1.6, z: targetZ},
+                    dur: 1500,
+                    easing: 'easeInOutQuint'
+                });
+
+                // 3. 穿梭时的 FOV 动态变化
+                const cam = document.querySelector('[camera]');
+                cam.setAttribute('animation__fov', {
+                    property: 'fov',
+                    from: 130,
+                    to: 110,
+                    dur: 1000,
+                    easing: 'easeOutQuad'
                 });
             }
         });
