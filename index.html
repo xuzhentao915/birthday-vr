@@ -3,169 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 生id派对 - 鱼眼全景体验</title>
-    <!-- A-Frame 核心 -->
+    <title>VR 生日派对 - 鱼眼全景展示</title>
+    <!-- A-Frame 核心库 -->
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <!-- A-Frame 扩展 (用于动画) -->
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
-    <!-- 环境组件 -->
-    <script src="https://unpkg.com/aframe-environment-component@1.3.7/dist/aframe-environment-component.min.js"></script>
-    <!-- 粒子系统 -->
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-particle-system-component@master/dist/aframe-particle-system-component.min.js"></script>
     
     <script>
-        // 自定义组件：鱼眼点击穿梭 (Click-to-Travel)
-        AFRAME.registerComponent('click-to-travel', {
+        /**
+         * 自定义组件：鱼眼镜头控制
+         * 实现点击地面/场景进行平滑穿梭，并增加镜头畸变的视觉表现
+         */
+        AFRAME.registerComponent('fisheye-navigation', {
             init: function () {
                 this.el.addEventListener('click', (evt) => {
                     const point = evt.detail.intersection.point;
                     const rig = document.querySelector('#cameraRig');
                     
-                    // 平滑移动到点击位置，保持视线高度
-                    rig.setAttribute('animation', {
+                    // 模拟鱼眼镜头穿梭时的拉伸感
+                    // 1. 平滑移动位置
+                    rig.setAttribute('animation__move', {
                         property: 'position',
                         to: {x: point.x, y: 1.6, z: point.z},
                         dur: 1500,
-                        easing: 'easeInOutQuad'
+                        easing: 'easeInOutQuint'
+                    });
+
+                    // 2. 穿梭时的 FOV 动态变化（产生速度感畸变）
+                    const cam = document.querySelector('[camera]');
+                    cam.setAttribute('animation__fov', {
+                        property: 'fov',
+                        from: 140,
+                        to: 110,
+                        dur: 1000,
+                        easing: 'easeOutQuad'
                     });
                 });
             }
         });
-
-        // 简单的呼吸效果
-        AFRAME.registerComponent('breath', {
-            init: function () {
-                this.el.setAttribute('animation__breath', {
-                    property: 'scale',
-                    dir: 'alternate',
-                    dur: 2000 + Math.random() * 1000,
-                    easing: 'easeInOutSine',
-                    loop: true,
-                    to: '1.05 1.05 1.05'
-                });
-            }
-        });
     </script>
+    
     <style>
-        .instruction-overlay {
+        body { margin: 0; overflow: hidden; background: #fafafa; font-family: 'PingFang SC', sans-serif; }
+        
+        /* 简洁插画风格的 UI 覆盖层 */
+        .ui-panel {
             position: fixed;
-            bottom: 20px;
+            top: 40px;
+            left: 40px;
+            z-index: 100;
+            pointer-events: none;
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2D3436;
+            letter-spacing: 2px;
+            border-left: 4px solid #FF6B6B;
+            padding-left: 15px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #636E72;
+            opacity: 0.8;
+            padding-left: 19px;
+        }
+
+        .guide-hint {
+            position: fixed;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-family: sans-serif;
-            font-size: 14px;
-            color: #333;
-            pointer-events: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 30px;
+            border-radius: 100px;
+            font-size: 13px;
+            color: #0984E3;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            pointer-events: none;
+            border: 1px solid #E1F5FE;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 鱼眼效果的圆形蒙版（可选，增加插画感） */
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.1);
+            pointer-events: none;
+            z-index: 50;
         }
     </style>
 </head>
 <body>
-    <div class="instruction-overlay">点击地面或人物进行穿梭漫游</div>
+    <!-- UI 装饰 -->
+    <div class="ui-panel">
+        <div class="title">BIRTHDAY PANORAMA</div>
+        <div class="subtitle">360° VR 全景技术展示</div>
+    </div>
+    <div class="guide-hint">点击画面任意处，平滑穿梭移动</div>
+    <div class="vignette"></div>
 
     <!-- 
-        1. 使用高 FOV (120) 配合球形布局模拟鱼眼成像畸变
-        2. renderer 设置 colorManagement 为 true 确保明亮配色
+        A-Frame 场景
+        renderer: colorManagement 确保明亮配色
+        cursor: 开启鼠标点击交互
     -->
-    <a-scene shadow="type: pcfsoft" 
+    <a-scene loading-screen="dotsColor: #FF6B6B; backgroundColor: #FFFFFF"
              renderer="colorManagement: true; antialias: true;"
-             cursor="rayOrigin: mouse" 
-             raycaster="objects: .clickable">
+             cursor="rayOrigin: mouse"
+             raycaster="objects: .panorama-sphere">
         
-        <!-- 资产管理 -->
-        <a-assets timeout="30000">
-            <!-- 真实 3D 人物 (Ready Player Me) -->
-            <a-asset-item id="host-model" src="https://models.readyplayer.me/64db39294f901a880590f113.glb" crossorigin="anonymous"></a-asset-item>
-            <a-asset-item id="friend1-model" src="https://models.readyplayer.me/6509930f3684c98863f68a41.glb" crossorigin="anonymous"></a-asset-item>
-            <a-asset-item id="friend2-model" src="https://models.readyplayer.me/6509939e3684c98863f68d60.glb" crossorigin="anonymous"></a-asset-item>
+        <a-assets>
+            <!-- 核心全景图片 -->
+            <img id="birthday-img" src="birthday.png" crossorigin="anonymous">
         </a-assets>
 
-        <!-- 1. 极简明亮环境 -->
-        <!-- 使用 'contact' 预设，色彩干净，光线充足 -->
-        <a-entity environment="preset: contact; groundColor: #FFFFFF; dressing: none; skyType: atmosphere; skyColor: #E0F7FA; lightPosition: 1 5 2"></a-entity>
-
-        <!-- 2. 地面探测层 (用于点击移动) -->
-        <a-circle class="clickable" click-to-travel 
-                  rotation="-90 0 0" radius="25" 
-                  material="opacity: 0.1; transparent: true; color: #4FC3F7"></a-circle>
-
-        <!-- 3. 摄像机系统 (鱼眼广角) -->
-        <a-entity id="cameraRig" position="0 1.6 5">
-            <a-camera id="mainCamera" fov="110" look-controls wasd-controls="enabled: false">
-                <a-cursor fuse="false" raycaster="objects: .clickable" color="#03A9F4"></a-cursor>
+        <!-- 1. 摄像机 Rig (鱼眼广角设置) -->
+        <a-entity id="cameraRig" position="0 1.6 0">
+            <a-camera fov="110" look-controls wasd-controls="enabled: false">
+                <!-- 极简准星，辅助点击 -->
+                <a-entity cursor="fuse: false"
+                          position="0 0 -1"
+                          geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.012"
+                          material="color: #0984E3; shader: flat; opacity: 0.6">
+                </a-entity>
             </a-camera>
         </a-entity>
 
-        <!-- 4. 生日派对现场 -->
+        <!-- 2. 全景球体 (鱼眼畸变的核心载体) -->
+        <!-- 
+            使用很大的半径，将 birthday.png 贴在内侧
+            通过 fisheye-navigation 组件实现空间位移
+        -->
+        <a-sky src="#birthday-img" 
+               class="panorama-sphere"
+               fisheye-navigation
+               radius="100"
+               animation="property: rotation; to: 0 360 0; dur: 100000; loop: true; easing: linear">
+        </a-sky>
 
-        <!-- 主人公 (The Host) -->
-        <a-entity id="host" position="0 0 0" rotation="0 0 0" class="clickable" click-to-travel>
-            <a-entity gltf-model="#host-model" animation-mixer="clip: Idle"></a-entity>
-            <a-cone position="0 1.8 0" radius-bottom="0.08" height="0.2" color="#FF4081"></a-cone> <!-- 粉色派对帽 -->
-            <a-text value="Happy Birthday!" position="0 2.2 0" align="center" width="4" color="#E91E63" font="kelsonsans"></a-text>
-        </a-entity>
+        <!-- 3. 环境光补偿 (插画感配色) -->
+        <!-- 这种全景展示不需要复杂光源，保持画面明亮纯净 -->
+        <a-light type="ambient" color="#FFFFFF" intensity="1.2"></a-light>
 
-        <!-- 朋友们 -->
-        <a-entity id="friend1" position="-2 0 -1" rotation="0 40 0" class="clickable" click-to-travel>
-            <a-entity gltf-model="#friend1-model" animation-mixer="clip: Idle"></a-entity>
-        </a-entity>
-
-        <a-entity id="friend2" position="2 0 -1.5" rotation="0 -30 0" class="clickable" click-to-travel>
-            <a-entity gltf-model="#friend2-model" animation-mixer="clip: Idle"></a-entity>
-        </a-entity>
-
-        <!-- 5. 生日蛋糕与长桌 -->
-        <a-entity position="0 0 -1.8">
-            <!-- 极简白色长桌 -->
-            <a-box position="0 0.45 0" width="2" height="0.9" depth="1.2" color="#FAFAFA" shadow></a-box>
-            
-            <!-- 层次分明的蛋糕 -->
-            <a-entity id="cake" position="0 0.9 0" breath>
-                <a-cylinder radius="0.4" height="0.25" color="#F48FB1"></a-cylinder> <!-- 底层 -->
-                <a-cylinder radius="0.25" height="0.2" position="0 0.22 0" color="#FCE4EC"></a-cylinder> <!-- 顶层 -->
-                <!-- 蜡烛 -->
-                <a-entity position="0 0.35 0">
-                    <a-cylinder radius="0.015" height="0.15" color="#FFEB3B"></a-cylinder>
-                    <a-light type="point" intensity="0.8" distance="3" color="#FFC107" position="0 0.1 0">
-                         <a-entity animation="property: scale; to: 1.3 1.5 1.3; dir: alternate; loop: true; dur: 400" 
-                                   geometry="primitive: sphere; radius: 0.02" material="color: #FFD54F; emissive: #FFD54F"></a-entity>
-                    </a-light>
-                </a-entity>
-            </a-entity>
-        </a-entity>
-
-        <!-- 6. 装饰与特效 (明亮配色) -->
-        <!-- 气球 A -->
-        <a-entity position="-3 1.5 -3" animation="property: position; to: -3 1.8 -3; dir: alternate; loop: true; dur: 2000">
-            <a-sphere radius="0.35" color="#FF7043" breath></a-sphere>
-            <a-cylinder radius="0.005" height="2" position="0 -1.2 0" color="#BDBDBD"></a-cylinder>
-        </a-entity>
-
-        <!-- 气球 B -->
-        <a-entity position="3.5 2 0.5" animation="property: position; to: 3.5 2.3 0.5; dir: alternate; loop: true; dur: 2500">
-            <a-sphere radius="0.4" color="#81C784" breath></a-sphere>
-            <a-cylinder radius="0.005" height="2.5" position="0 -1.5 0" color="#BDBDBD"></a-cylinder>
-        </a-entity>
-
-        <!-- 气球 C -->
-        <a-entity position="1 2.5 4" animation="property: position; to: 1 2.8 4; dir: alternate; loop: true; dur: 1800">
-            <a-sphere radius="0.3" color="#64B5F6" breath></a-sphere>
-            <a-cylinder radius="0.005" height="3" position="0 -1.8 0" color="#BDBDBD"></a-cylinder>
-        </a-entity>
-
-        <!-- 气氛特效：空中飘落的彩纸 -->
-        <a-entity position="0 5 0" particle-system="preset: default; color: #FFEB3B,#F48FB1,#4FC3F7; particleCount: 600; size: 0.4"></a-entity>
-
-        <!-- 7. 全景球形感背景 (极简几何网格) -->
-        <a-sphere radius="45" side="double" material="shader: flat; wireframe: true; color: #E1F5FE; opacity: 0.15"></a-sphere>
-
-        <!-- 全局光照 -->
-        <a-light type="ambient" color="#FFFFFF" intensity="1"></a-light>
-        <a-light type="directional" intensity="0.5" position="2 4 3" castShadow="true"></a-light>
+        <!-- 4. 装饰：极简背景球（增加球形畸变的空间感） -->
+        <a-sphere radius="95" 
+                  side="back" 
+                  material="shader: flat; wireframe: true; color: #E1F5FE; opacity: 0.1; wireframeLinewidth: 0.5">
+        </a-sphere>
 
     </a-scene>
 </body>
