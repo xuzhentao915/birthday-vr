@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日派对 VR 体验</title>
+    <!-- A-Frame 核心库 -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- 环境组件 -->
+    <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+    <!-- 粒子系统组件 -->
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-particle-system-component@master/dist/aframe-particle-system-component.min.js"></script>
+    
+    <script>
+        // 自定义组件：点击移动 (Click-to-Move)
+        AFRAME.registerComponent('click-to-move', {
+            init: function () {
+                this.el.addEventListener('click', (evt) => {
+                    // 获取点击位置
+                    const point = evt.detail.intersection.point;
+                    const rig = document.querySelector('#cameraRig');
+                    
+                    // 平滑穿梭动画
+                    rig.setAttribute('animation', {
+                        property: 'position',
+                        to: {x: point.x, y: 0, z: point.z},
+                        dur: 1500,
+                        easing: 'easeInOutCubic'
+                    });
+                });
+            }
+        });
+
+        // 简单的随机动作组件
+        AFRAME.registerComponent('vibe-check', {
+            init: function () {
+                this.el.setAttribute('animation__vibe', {
+                    property: 'position',
+                    dir: 'alternate',
+                    dur: 1000 + Math.random() * 1000,
+                    easing: 'easeInOutSine',
+                    loop: true,
+                    to: {x: this.el.object3D.position.x, y: this.el.object3D.position.y + 0.1, z: this.el.object3D.position.z}
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+    <a-scene shadow="type: pcfsoft" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+        <!-- 资源管理 -->
+        <a-assets>
+            <a-mixin id="friend-head" geometry="primitive: sphere; radius: 0.25"></a-mixin>
+            <a-mixin id="friend-body" geometry="primitive: box; width: 0.4; height: 0.6; depth: 0.2"></a-mixin>
+        </a-assets>
+
+        <!-- 环境：梦幻星空 -->
+        <a-entity environment="preset: starry; ground: noise; groundColor: #1a1a2e; dressing: none; skyType: atmosphere; skyColor: #000b2e"></a-entity>
+
+        <!-- 摄像机 Rig -->
+        <a-entity id="cameraRig" position="0 0 5">
+            <a-camera id="head" look-controls wasd-controls="enabled: false">
+                <a-cursor fuse="false" raycaster="objects: .clickable" color="#FFD700"></a-cursor>
+            </a-camera>
+        </a-entity>
+
+        <!-- 地面（点击移动区域） -->
+        <a-plane class="clickable" click-to-move 
+                 rotation="-90 0 0" width="50" height="50" 
+                 material="opacity: 0; transparent: true"></a-plane>
+
+        <!-- 生日主题内容 -->
+        
+        <!-- 1. 主人公 (The Host) -->
+        <a-entity id="host" position="0 0 0" vibe-check>
+            <a-sphere position="0 1.6 0" radius="0.28" color="#FFD700" metalness="0.5"></a-sphere> <!-- 头部 -->
+            <a-cone position="0 2.0 0" radius-bottom="0.15" height="0.3" color="#FF4500"></a-cone> <!-- 生日帽 -->
+            <a-box position="0 1.0 0" width="0.5" height="0.8" depth="0.3" color="#4169E1"></a-box> <!-- 身体 -->
+            <a-text value="主人公" position="0 2.3 0" align="center" width="4" color="#FFF"></a-text>
+        </a-entity>
+
+        <!-- 2. 朋友们 (Friends) -->
+        <!-- 朋友 A -->
+        <a-entity position="-1.5 0 -0.5" vibe-check>
+            <a-entity mixin="friend-head" position="0 1.5 0" color="#32CD32"></a-entity>
+            <a-entity mixin="friend-body" position="0 0.9 0" color="#8B4513"></a-entity>
+            <a-text value="朋友 A" position="0 1.9 0" align="center" width="3"></a-text>
+        </a-entity>
+
+        <!-- 朋友 B -->
+        <a-entity position="1.8 0 -0.8" vibe-check>
+            <a-entity mixin="friend-head" position="0 1.5 0" color="#FF69B4"></a-entity>
+            <a-entity mixin="friend-body" position="0 0.9 0" color="#9370DB"></a-entity>
+            <a-text value="朋友 B" position="0 1.9 0" align="center" width="3"></a-text>
+        </a-entity>
+
+        <!-- 朋友 C -->
+        <a-entity position="0.8 0 1.5" vibe-check>
+            <a-entity mixin="friend-head" position="0 1.5 0" color="#00CED1"></a-entity>
+            <a-entity mixin="friend-body" position="0 0.9 0" color="#FF8C00"></a-entity>
+            <a-text value="朋友 C" position="0 1.9 0" align="center" width="3"></a-text>
+        </a-entity>
+
+        <!-- 3. 中央长桌与蛋糕 -->
+        <a-entity id="party-table" position="0 0 -1.2">
+            <a-box position="0 0.4 0" width="2.5" height="0.8" depth="1.5" color="#FFF" shadow></a-box> <!-- 桌子 -->
+            
+            <!-- 蛋糕 (Cake) -->
+            <a-entity id="cake" position="0 0.8 0">
+                <a-cylinder radius="0.4" height="0.3" color="#FFB6C1"></a-cylinder> <!-- 底层 -->
+                <a-cylinder radius="0.25" height="0.2" position="0 0.25 0" color="#FFF0F5"></a-cylinder> <!-- 顶层 -->
+                <!-- 蜡烛 -->
+                <a-cylinder radius="0.02" height="0.15" position="0 0.4 0" color="#FF0000">
+                    <a-light type="point" intensity="0.6" distance="2" color="#FFA500" position="0 0.1 0">
+                         <a-entity animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; loop: true; dur: 500" 
+                                   geometry="primitive: sphere; radius: 0.03" material="color: #FFD700; emissive: #FFD700"></a-entity>
+                    </a-light>
+                </a-cylinder>
+            </a-entity>
+        </a-entity>
+
+        <!-- 4. 气球 (Balloons) -->
+        <a-entity position="-3 1.5 -2" animation="property: position; to: -3 1.8 -2; dir: alternate; loop: true; dur: 2000">
+            <a-sphere radius="0.3" color="#FF0000"></a-sphere>
+            <a-cylinder radius="0.005" height="1.5" position="0 -0.9 0" color="#EEE"></a-cylinder>
+        </a-entity>
+        <a-entity position="3 1.2 1" animation="property: position; to: 3 1.6 1; dir: alternate; loop: true; dur: 2500">
+            <a-sphere radius="0.3" color="#00FF00"></a-sphere>
+            <a-cylinder radius="0.005" height="1.5" position="0 -0.9 0" color="#EEE"></a-cylinder>
+        </a-entity>
+        <a-entity position="-2 1.8 3" animation="property: position; to: -2 2.1 3; dir: alternate; loop: true; dur: 1800">
+            <a-sphere radius="0.3" color="#1E90FF"></a-sphere>
+            <a-cylinder radius="0.005" height="1.5" position="0 -0.9 0" color="#EEE"></a-cylinder>
+        </a-entity>
+
+        <!-- 5. 特效：彩纸飘落 -->
+        <a-entity position="0 5 0" particle-system="preset: default; color: #FF0000,#00FF00,#0000FF; particleCount: 500; size: 0.5"></a-entity>
+
+        <!-- 6. 悬浮标题 -->
+        <a-entity position="0 3.5 -4" animation="property: scale; to: 1.1 1.1 1.1; dir: alternate; loop: true; dur: 1000">
+            <a-text value="HAPPY BIRTHDAY!" align="center" width="10" color="#FFD700" font="kelsonsans"></a-text>
+        </a-entity>
+
+        <!-- 灯光 -->
+        <a-light type="ambient" color="#444"></a-light>
+        <a-light type="directional" intensity="0.5" position="-1 4 3" castShadow="true"></a-light>
+    </a-scene>
+</body>
+</html>
