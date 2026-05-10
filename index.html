@@ -146,12 +146,16 @@
     <div class="vignette"></div>
 
     <!-- 
-        A-Frame 场景
-        renderer: colorManagement 确保明亮配色
-        cursor: 开启鼠标点击交互
+        A-Frame 场景优化：
+        1. renderer: 限制 devicePixelRatio (设为 1 或自动适配但不过高) 并在移动端使用 mediump 精度提升帧率。
+        2. vr-mode-ui: 确保 VR 模式 UI 开启。
+        3. device-orientation-permission-ui: 适配移动端传感器权限。
     -->
     <a-scene loading-screen="dotsColor: #FF6B6B; backgroundColor: #FFFFFF"
-             renderer="colorManagement: true; antialias: true;"
+             renderer="colorManagement: true; antialias: true; precision: mediump; devicePixelRatio: 1; sortObjects: true;"
+             vr-mode-ui="enabled: true"
+             device-orientation-permission-ui="enabled: true"
+             webxr="referenceSpaceType: local-floor; foveationLevel: 3;"
              cursor="rayOrigin: mouse"
              raycaster="objects: .panorama-sphere">
         
@@ -162,7 +166,7 @@
 
         <!-- 1. 摄像机 Rig (鱼眼广角设置) -->
         <a-entity id="cameraRig" position="0 1.6 0">
-            <a-camera fov="110" look-controls wasd-controls="enabled: false">
+            <a-camera fov="110" look-controls="pointerLockEnabled: false" wasd-controls="enabled: false">
                 <!-- 极简准星，辅助点击 -->
                 <a-entity cursor="fuse: false"
                           position="0 0 -1"
@@ -174,22 +178,25 @@
 
         <!-- 2. 全景球体 (鱼眼畸变的核心载体) -->
         <!-- 
-            使用很大的半径，将 birthday.png 贴在内侧
-            通过 fisheye-navigation 组件实现空间位移
+            优化：使用合理的球体分段数以平衡画质与性能
         -->
         <a-sky src="#birthday-img" 
                class="panorama-sphere"
                fisheye-navigation
-               radius="100">
+               radius="100"
+               segments-width="64"
+               segments-height="32">
         </a-sky>
 
         <!-- 3. 环境光补偿 (插画感配色) -->
         <!-- 这种全景展示不需要复杂光源，保持画面明亮纯净 -->
         <a-light type="ambient" color="#FFFFFF" intensity="1.2"></a-light>
 
-        <!-- 4. 装饰：极简背景球（增加球形畸变的空间感） -->
+        <!-- 4. 装饰：极简背景球（减少分段数提升性能） -->
         <a-sphere radius="95" 
                   side="back" 
+                  segments-width="32"
+                  segments-height="16"
                   material="shader: flat; wireframe: true; color: #E1F5FE; opacity: 0.1; wireframeLinewidth: 0.5">
         </a-sphere>
 
