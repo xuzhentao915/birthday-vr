@@ -1,131 +1,24 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生日派对 VR 体验 - 家中客厅现场</title>
-    <!-- A-Frame 核心库 -->
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <!-- A-Frame Extras (用于播放 GLTF 动画) -->
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
-    <!-- 粒子系统组件 -->
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-particle-system-component@master/dist/aframe-particle-system-component.min.js"></script>
-    
-    <script>
-        // 自定义组件：点击移动 (Click-to-Move)
-        AFRAME.registerComponent('click-to-move', {
-            init: function () {
-                this.el.addEventListener('click', (evt) => {
-                    const point = evt.detail.intersection.point;
-                    const rig = document.querySelector('#cameraRig');
-                    rig.setAttribute('animation', {
-                        property: 'position',
-                        to: {x: point.x, y: 0, z: point.z},
-                        dur: 1500,
-                        easing: 'easeInOutCubic'
-                    });
-                });
-            }
-        });
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>生日派对 VR 全景展示</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-teleport-controls@0.3.x/dist/aframe-teleport-controls.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <img id="party-panoramic" src="path/to/your/birthday_panic.jpg">
+      </a-assets>
 
-        // 监听资源加载状态
-        window.addEventListener('load', () => {
-            const scene = document.querySelector('a-scene');
-            scene.addEventListener('loaded', () => {
-                console.log('场景加载完成');
-            });
-        });
-    </script>
-</head>
-<body>
-    <!-- 使用更亮的渲染设置 -->
-    <a-scene renderer="colorManagement: true; antialias: true; physicallyCorrectLights: false;"
-             cursor="rayOrigin: mouse" raycaster="objects: .clickable">
-        
-        <a-assets timeout="20000">
-            <!-- 选用更稳定的 GLB 格式客厅模型 -->
-            <a-asset-item id="apartment-model" src="https://cdn.aframe.io/link-traversal/models/apartment.glb" crossorigin="anonymous"></a-asset-item>
-            
-            <!-- 选用验证过的 Ready Player Me 真实人物模型 -->
-            <!-- 主人公 -->
-            <a-asset-item id="avatar-host" src="https://models.readyplayer.me/64db39294f901a880590f113.glb" crossorigin="anonymous"></a-asset-item>
-            <!-- 朋友 A -->
-            <a-asset-item id="avatar-friend-a" src="https://models.readyplayer.me/6509930f3684c98863f68a41.glb" crossorigin="anonymous"></a-asset-item>
-            <!-- 朋友 B -->
-            <a-asset-item id="avatar-friend-b" src="https://models.readyplayer.me/6509939e3684c98863f68d60.glb" crossorigin="anonymous"></a-asset-item>
-        </a-assets>
+      <a-sky src="#party-panoramic" rotation="0 -130 0"></a-sky>
 
-        <!-- 1. 客厅环境 -->
-        <!-- 基础天空，防止全黑 -->
-        <a-sky color="#87CEEB"></a-sky> 
-
-        <!-- 3D 公寓模型 -->
-        <a-entity gltf-model="#apartment-model" position="0 0 0" scale="1 1 1"></a-entity>
-
-        <!-- 点击移动的透明探测层 -->
-        <a-plane id="floor-trigger" class="clickable" click-to-move 
-                 rotation="-90 0 0" width="50" height="50" position="0 0.02 0"
-                 material="opacity: 0.1; transparent: true; color: #FFF"></a-plane>
-
-        <!-- 2. 摄像机 Rig -->
-        <a-entity id="cameraRig" position="0 0 3">
-            <a-camera id="head" look-controls wasd-controls="enabled: true">
-                <a-cursor fuse="false" raycaster="objects: .clickable" color="#FFD700"></a-cursor>
-            </a-camera>
-        </a-entity>
-
-        <!-- 3. 人物 (Real People) -->
-        
-        <!-- 主人公 -->
-        <a-entity id="host" position="0 0 -1" rotation="0 0 0">
-            <a-entity gltf-model="#avatar-host" scale="1 1 1" animation-mixer></a-entity>
-            <a-cone position="0 1.85 0" radius-bottom="0.08" height="0.15" color="#FF4500"></a-cone> 
-            <a-text value="主人公" position="0 2.2 0" align="center" width="3" color="#000"></a-text>
-        </a-entity>
-
-        <!-- 朋友 A -->
-        <a-entity id="friend-a" position="-1.5 0 -0.5" rotation="0 45 0">
-            <a-entity gltf-model="#avatar-friend-a" scale="1 1 1" animation-mixer></a-entity>
-            <a-text value="朋友 A" position="0 2.0 0" align="center" width="2.5" color="#000"></a-text>
-        </a-entity>
-
-        <!-- 朋友 B -->
-        <a-entity id="friend-b" position="1.5 0 -1" rotation="0 -30 0">
-            <a-entity gltf-model="#avatar-friend-b" scale="1 1 1" animation-mixer></a-entity>
-            <a-text value="朋友 B" position="0 2.0 0" align="center" width="2.5" color="#000"></a-text>
-        </a-entity>
-
-        <!-- 4. 派对内容 -->
-        <a-entity id="party-table" position="0 0 -1.8">
-            <a-box position="0 0.45 0" width="1.8" height="0.9" depth="1" color="#FFFFFF" shadow></a-box>
-            <!-- 蛋糕 -->
-            <a-entity id="cake" position="0 0.9 0">
-                <a-cylinder radius="0.3" height="0.2" color="#FFC0CB"></a-cylinder>
-                <a-cylinder radius="0.01" height="0.15" position="0 0.2 0" color="#FF0000">
-                    <a-light type="point" intensity="1" distance="2" color="#FFA500"></a-light>
-                </a-cylinder>
-            </a-entity>
-        </a-entity>
-
-        <!-- 5. 装饰与气氛 -->
-        <a-entity position="-3 1.5 -2" animation="property: position; to: -3 1.8 -2; dir: alternate; loop: true; dur: 2000">
-            <a-sphere radius="0.3" color="#FF4500"></a-sphere>
-        </a-entity>
-        <a-entity position="3 1.5 -1" animation="property: position; to: 3 1.8 -1; dir: alternate; loop: true; dur: 2500">
-            <a-sphere radius="0.3" color="#1E90FF"></a-sphere>
-        </a-entity>
-
-        <!-- 彩纸特效 -->
-        <a-entity position="0 4 0" particle-system="preset: default; color: #FFD700,#FF69B4; particleCount: 300"></a-entity>
-
-        <!-- 6. 灯光 (大幅增强) -->
-        <!-- 环境光：确保基础亮度 -->
-        <a-light type="ambient" intensity="1.2" color="#FFF"></a-light>
-        <!-- 平行光：模拟室内灯光 -->
-        <a-light type="directional" intensity="0.8" position="2 4 3" castShadow="true"></a-light>
-        <!-- 额外点光源：照亮人物面部 -->
-        <a-light type="point" intensity="0.5" position="0 2 1" distance="5"></a-light>
-
-    </a-scene>
-</body>
+      <a-entity id="cameraRig">
+        <a-entity id="head" camera look-controls></a-entity>
+        <a-entity laser-controls="hand: right" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head;"></a-entity>
+      </a-entity>
+      
+      </a-scene>
+  </body>
 </html>
